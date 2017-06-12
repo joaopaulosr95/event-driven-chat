@@ -32,6 +32,7 @@ SOFTWARE.
 ==> 19-06-2017
 """
 import logging
+import socket
 import struct
 import random
 import select
@@ -131,8 +132,19 @@ def handle_shutdown(client_list):
                     pass
             client["sender_id"], client["sender_sock"] = None, None
 
-def server(srv_sock):
+def server():
     logger = logging.getLogger(__name__)
+
+    # connection parameters
+    srv_host = socket.gethostbyname(socket.gethostname())
+    srv_port = 65535
+
+    srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    srv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    srv_sock.setblocking(0)
+    srv_sock.bind((srv_host, srv_port))
+    srv_sock.listen(chatutils.MAX_CLIENTS)
+    logger.info("Server running at %s:%d", srv_host, srv_port)
 
     viewers_connected = 0
     senders_connected = 0

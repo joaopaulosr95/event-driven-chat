@@ -88,7 +88,7 @@ def process_opt():
 | ===================================================================
 """
 
-def viewer():
+def viewer(host, port):
     pass
 
 """
@@ -108,7 +108,7 @@ def helper():
 | ===================================================================
 """
 
-def sender(viewer_id=None):
+def sender(host, port, viewer_id=None):
     logger = logging.getLogger(__name__)
 
     sender_id = 0
