@@ -132,12 +132,12 @@ def handle_shutdown(client_list):
                     pass
             client["sender_id"], client["sender_sock"] = None, None
 
-def server():
+def server(host, port):
     logger = logging.getLogger(__name__)
 
     # connection parameters
-    srv_host = socket.gethostbyname(socket.gethostname())
-    srv_port = 65535
+    srv_host = host or socket.gethostbyname(socket.gethostname())
+    srv_port = port or 65535
 
     srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     srv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

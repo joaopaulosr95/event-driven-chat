@@ -36,51 +36,7 @@ import struct
 import sys
 import select
 import logging
-from optparse import OptionParser
 import chatutils
-
-"""
-| ===================================================================
-| vararg_callback: takes a variable number of arguments
-| ===================================================================
-"""
-
-def vararg_callback(option, opt_str, value, parser):
-    assert value is None
-    value = []
-
-    def floatable(str):
-        try:
-            float(str)
-            return True
-        except ValueError:
-            return False
-
-    for arg in parser.rargs:
-        # stop on --foo like options
-        if arg[:2] == "--" and len(arg) > 2:
-            break
-        # stop on -a, but not on -3 or -3.0
-        if arg[:1] == "-" and len(arg) > 1 and not floatable(arg):
-            break
-        value.append(arg)
-
-    del parser.rargs[:len(value)]
-    setattr(parser.values, option.dest, value)
-
-"""
-| ===================================================================
-| process_opt: parsing command-line options
-| ===================================================================
-"""
-
-def process_opt():
-    usage = "usage: %prog files\n"
-    parser = OptionParser(usage=usage)
-    parser.add_option("-s", "--sender", dest="sender", action="callback", callback=vararg_callback, help="sender params")
-    parser.add_option("-v", "--viewer", dest="viewer", help="viewer params", nargs=1)
-    opt, files = parser.parse_args()
-    return opt
 
 """
 | ===================================================================
@@ -143,11 +99,11 @@ def sender(host, port, viewer_id=None):
                         sender_seq_number += 1
 
                     # sys.stdout.write(data)
-                    sys.stdout.write('You can type help anytime to see commands available\n[Me (#%d)] ' % sender_id)
+                    sys.stdout.write('You can type help anytime to see commands available\n')
                     sys.stdout.flush()
 
                 else:
-                    user_input = input()
+                    user_input = raw_input('Me (#%d): ' % sender_id)
                     if user_input == "help":
                         helper()
                     else:
