@@ -31,6 +31,7 @@ SOFTWARE.
 ==> Trabalho pratico 2
 ==> 19-06-2017
 """
+import argparse
 import logging
 from ..utils import clientutils
 
@@ -41,23 +42,23 @@ if __name__ == "__main__":
 
     logger = logging.getLogger(__name__)
 
-    # get optional parameters
-    opt = clientutils.process_opt()
+    # create the top-level parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument('server', type=str, default='127.0.1.1:65535', metavar="host:port", help="host and port of running server")
+    subparsers = parser.add_subparsers(dest='behavior')
 
-    if opt.sender:
-        # connection parameters
-        host, port = opt.sender[0].split(':')
+    # create the parser for the "viewer" command
+    parser_a = subparsers.add_parser('viewer')
 
-        # this sender is attached to a viewer
-        if len(opt.sender) > 1:
-            viewer_id = opt.sender[1]
-            clientutils.sender(host, int(port), int(viewer_id))
+    # create the parser for the "sender" command
+    parser_b = subparsers.add_parser('sender')
+    parser_b.add_argument('-vid', '--viewer_id', type=int, default=-1, metavar="ID", help="id of running viewer")
 
-        else:
-            clientutils.sender(host, int(port))
+    opt = parser.parse_args()
+    host, port = opt.server.split(':')
 
-    elif opt.viewer:
-        # connection parameters
-        host, port = opt.viewer[0].split(':')
+    if opt.behavior == 'sender':
+        clientutils.sender(host, int(port), opt.viewer_id)
 
+    else:
         clientutils.viewer(host, int(port))

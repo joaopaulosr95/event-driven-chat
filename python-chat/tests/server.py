@@ -31,7 +31,17 @@ SOFTWARE.
 ==> Trabalho pratico 2
 ==> 19-06-2017
 """
+import argparse
+
 from ..utils import serverutils
 
 if __name__ == "__main__":
-    serverutils.server()
+
+    # create the top-level parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument('server', type=str, default='127.0.1.1:65535', metavar="host:port", help="host and port of running server")
+
+    opt = parser.parse_args()
+    host, port = opt.server.split(':')
+
+    serverutils.server(host, int(port))
