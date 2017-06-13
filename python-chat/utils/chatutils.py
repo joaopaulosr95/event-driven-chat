@@ -80,9 +80,11 @@ def deliver_message(to_sock, header, message_type, message_size=None, message_co
                 to_sock.send(header)
 
             # If the message we just sent is not a confirmation, then we should wait for a confirmation
-            if message_type != MESSAGE_TYPES["OI"] or message_type != MESSAGE_TYPES["OK"] or message_type != MESSAGE_TYPES["ERRO"]:
+            if message_type != MESSAGE_TYPES["OI"] and message_type != MESSAGE_TYPES["OK"] and message_type != MESSAGE_TYPES["ERRO"]:
                 answer = struct.unpack(HEADER_FORMAT, to_sock.recv(HEADER_SIZE))[0]
-            if answer == MESSAGE_TYPES["OK"]:
+                if answer == MESSAGE_TYPES["OK"]:
+                    break
+            else:
                 break
         except:  # TODO better error handling
             raise
