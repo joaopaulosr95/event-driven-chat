@@ -274,17 +274,17 @@ def server(port):
 
                         # Does the client sock match with proper id?
                         valid_from = True
-                        if not is_valid_client(sock, client_list, client_from_id):
+                        if not is_valid_client(sock, client_list, client_from_id) and not client_to_id == chatutils.SRV_ID:
                             header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id, seq_number)
                             try:
                                 chatutils.deliver_message(sock, header, chatutils.MESSAGE_TYPES["ERRO"])
                             except:
                                 pass
                             finally:
-                                valid_to = False
+                                valid_from = False
 
                         valid_to = True
-                        if not is_valid_client(sock, client_list, client_to_id):
+                        if not is_valid_client(sock, client_list, client_to_id) and not client_to_id == chatutils.SRV_ID:
                             header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id, seq_number)
                             try:
                                 chatutils.deliver_message(sock, header, chatutils.MESSAGE_TYPES["ERRO"])
@@ -297,25 +297,10 @@ def server(port):
 
                             # The client wants to disconnect
                             if message_type_id == chatutils.MESSAGE_TYPES["FLW"]:
-                                header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, client_from_id, seq_number)
-                                try:
-                                    chatutils.deliver_message(sock, header, chatutils.MESSAGE_TYPES["OK"])
-                                except:
-                                    pass
 
                                 # Checks if client is viewer or sender
-                                if client_from_id in range(chatutils.VIEWER_RANGE_MIN, chatutils.VIEWER_RANGE_MAX):
-                                    client = get_client_by_parameter(client_list, "viewer_id", client_from_id)
-                                    client["viewer_id"], client["viewer_sock"] = None, None
-                                    sock_list.remove(sock)
-                                    viewers_connected -= 1
-
-                                elif client_from_id in range(chatutils.SENDER_RANGE_MIN, chatutils.SENDER_RANGE_MAX):
+                                if client_from_id in range(chatutils.SENDER_RANGE_MIN, chatutils.SENDER_RANGE_MAX):
                                     client = get_client_by_parameter(client_list, "sender_id", client_from_id)
-                                    client["sender_id"], client["sender_sock"] = None, None
-                                    sock_list.remove(sock)
-                                    senders_connected -= 1
-
                                     if client["viewer_sock"]:
                                         header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["FLW"], chatutils.SRV_ID, client["viewer_id"],
                                                                            srv_seq_number)
@@ -323,9 +308,24 @@ def server(port):
                                             chatutils.deliver_message(client["viewer_sock"], header, chatutils.MESSAGE_TYPES["FLW"])
                                         except:
                                             pass
-                                        finally:
-                                            client["viewer_id"], client["viewer_sock"] = None, None
-                                            client_list.remove(client)
+                                        sock_list.remove(client["viewer_sock"])
+                                        client["viewer_id"], client["viewer_sock"] = None, None
+                                        viewers_connected -= 1
+
+                                    header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, client_from_id, seq_number)
+                                    try:
+                                        chatutils.deliver_message(sock, header, chatutils.MESSAGE_TYPES["OK"])
+                                    except:
+                                        pass
+                                    sock_list.remove(sock)
+                                    client["sender_id"], client["sender_sock"] = None, None
+                                    senders_connected -= 1
+
+                                elif client_from_id in range(chatutils.VIEWER_RANGE_MIN, chatutils.VIEWER_RANGE_MAX):
+                                    client = get_client_by_parameter(client_list, "viewer_id", client_from_id)
+                                    sock_list.remove(sock)
+                                    client["viewer_id"], client["viewer_sock"] = None, None
+                                    viewers_connected -= 1
 
                                 # If client isn't associated with no more ids and sockets, remove it from client_list
                                 if client["viewer_id"] is None and client["viewer_sock"] is None \
