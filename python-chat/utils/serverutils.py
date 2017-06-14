@@ -74,9 +74,13 @@ def get_client_by_parameter(client_list, parameter_key, parameter_val):
 """
 
 def clist(client_list):
-    l = ["%d" % client["viewer_id"] for client in client_list if client["viewer_id"] is not None]
-    l = l + ["%d" % client["sender_id"] for client in client_list if client["sender_id"] is not None]
-    return l.sort()
+    l = ''
+    for client in client_list:
+        if client["viewer_id"]:
+            l = l + struct.pack("!H", client["viewer_id"])
+        if client["sender_id"]:
+            l = l + struct.pack("!H", client["sender_id"])
+    return l
 
 """
 | ===================================================================
@@ -149,6 +153,7 @@ def attach_client(client_list, client_type):
 | dettach_client: clears client information based on type
 | ===================================================================
 """
+
 def dettach_client(client, client_type):
     client[client_type + "_id"], client[client_type + "_sock"] = None, None
 
@@ -319,6 +324,7 @@ def server(port):
                                 chatutils.deliver_message(sock, header, chatutils.MESSAGE_TYPES["OK"])
                                 dettach_client(client, client_type)
                                 sock_list.remove(sock)
+                                sock.close()
 
                                 # If client isn't associated with no more ids and sockets, remove it from client_list
                                 if client["viewer_id"] is None and client["viewer_sock"] is None \
@@ -326,6 +332,7 @@ def server(port):
                                     client_list.remove(client)
 
                                 log = "Client #%d left" % client_from_id
+                                logger.info(log)
                                 header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["MSG"], chatutils.SRV_ID, client_from_id, srv_seq_number)
                                 broadcast(client_list, header, chatutils.MESSAGE_TYPES["MSG"], log)
                                 srv_seq_number += 1
@@ -336,7 +343,7 @@ def server(port):
                                 chatutils.deliver_message(sock, header, chatutils.MESSAGE_TYPES["OK"])
 
                                 msg_length = struct.unpack("!H", sock.recv(2))[0]
-                                msg_contents = sock.recv(struct.calcsize(str(msg_length) + "s"))
+                                msg_contents = sock.recv(msg_length)
 
                                 # Its a broadcast
                                 if client_to_id == 0:
@@ -344,35 +351,27 @@ def server(port):
 
                                 # Message has a specific destination
                                 else:
-                                    # Destination is a sender or a viewer?
-                                    if client_to_id in range(chatutils.VIEWER_RANGE_MIN, chatutils.VIEWER_RANGE_MAX):
+                                    if client_to_id == chatutils.SRV_ID:
+                                        logger.info(msg_contents)
+                                    else:
                                         client_to = get_client_by_parameter(client_list, "viewer_id", client_to_id)
-                                    elif client_to_id in range(chatutils.SENDER_RANGE_MIN, chatutils.SENDER_RANGE_MAX):
-                                        client_to = get_client_by_parameter(client_list, "sender_id", client_to_id)
-
-                                    chatutils.deliver_message(client_to["viewer_sock"], data, chatutils.MESSAGE_TYPES["MSG"], msg_length, msg_contents)
+                                        chatutils.deliver_message(client_to["viewer_sock"], data, chatutils.MESSAGE_TYPES["MSG"], msg_length,
+                                                                  msg_contents)
 
                             # The client asked for a list of clients
                             elif message_type_id == chatutils.MESSAGE_TYPES["CREQ"]:
                                 header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, client_from_id, seq_number)
-                                try:
-                                    chatutils.deliver_message(sock, header, chatutils.MESSAGE_TYPES["OK"])
-                                except:
-                                    raise
+                                chatutils.deliver_message(sock, header, chatutils.MESSAGE_TYPES["OK"])
 
-                                clist = clist(client_list)
+                                viewer_list = clist(client_list)
                                 header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["CLIST"], chatutils.SRV_ID, client_to_id, srv_seq_number)
 
                                 # Broadcast CLIST
                                 if client_to_id == 0:
-                                    broadcast(client_list, header, chatutils.MESSAGE_TYPES["CLIST"], clist)
+                                    broadcast(client_list, header, chatutils.MESSAGE_TYPES["CLIST"], viewer_list)
                                 else:
                                     client_to = get_client_by_parameter(client_list, "viewer_id", client_to_id)
-                                    try:
-                                        chatutils.deliver_message(client_to["viewer_sock"], data, chatutils.MESSAGE_TYPES["CLIST"], clist)
-                                    except:
-                                        # TODO: better error handling, but which?
-                                        pass
+                                    chatutils.deliver_message(client_to["viewer_sock"], data, chatutils.MESSAGE_TYPES["CLIST"], viewer_list)
                                 srv_seq_number += 1
 
                         else:
@@ -380,13 +379,14 @@ def server(port):
                             header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id, seq_number)
                             chatutils.deliver_message(sock, header, chatutils.MESSAGE_TYPES["ERRO"])
 
-                            client_1 = get_client_by_parameter(client_list, "sender_sock" , sock)
+                            client_1 = get_client_by_parameter(client_list, "sender_sock", sock)
                             if not client_1:
-                                client_2 = get_client_by_parameter(client_list, "viewer_sock" , sock)
+                                client_2 = get_client_by_parameter(client_list, "viewer_sock", sock)
                                 dettach_client(client_2, "viewer")
                             else:
                                 dettach_client(client_1, "sender")
                             sock_list.remove(sock)
+                            sock.close()
         except KeyboardInterrupt:
             try:
                 handle_shutdown(client_list)
