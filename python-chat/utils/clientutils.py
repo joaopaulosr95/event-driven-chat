@@ -102,9 +102,9 @@ def viewer(host, port):
 """
 
 def helper():
-    print('How to interact:\n'
-          + 'CID#hello world: sends "hello world" to viewer #CID. If CID = 0, sends a broadcast\n'
-          + 'CID#CREQ: \tprints a list of clients to terminal #CID. If CID = 0, sends a broadcast')
+    print('\nHow to interact:\n'
+          + 'CID#message: sends "message" to viewer #CID. If CID = 0, sends a broadcast\n'
+          + 'CID#CREQ: \tprints a list of clients to terminal #CID. If CID = 0, sends a broadcast\n')
 
 """
 | ===================================================================
@@ -137,10 +137,6 @@ def sender(host, port, viewer_id=None):
             continue
 
     print("Just received id #%d" % sender_id)
-    sys.stdout.write('You can type help anytime to see commands available\n')
-    sys.stdout.write('Me (#%d): ' % sender_id)
-    sys.stdout.flush()
-
     sock_list = [sender_sock, sys.stdin]
     while True:
         try:
@@ -154,16 +150,13 @@ def sender(host, port, viewer_id=None):
                     if message_type == chatutils.MESSAGE_TYPES["OK"]:
                         seq_number += 1
                 else:
-                    user_input = raw_input()
+                    user_input = raw_input('Press help to see commands available\nMe (#%d): ' % sender_id)
                     if user_input == "help":
                         helper()
-                        sys.stdout.write('Me (#%d): ' % sender_id)
-                        sys.stdout.flush()
                     else:
                         message_split = user_input.split("#")
                         if len(message_split) != 2:
-                            logger.warning("Incorrect message format, type again")
-
+                            print("Incorrect message format, type again")
                         else:
                             destination_id, message_contents = message_split
                             destination_id = int(destination_id)
@@ -173,20 +166,13 @@ def sender(host, port, viewer_id=None):
                                                           message_contents)
 
                             elif len(message_contents) >= chatutils.MAX_MSG_LEN:
-                                logging.error("Cannot read more than %d characters, try again with less amount", chatutils.MAX_MSG_LEN)
+                                print("Cannot read more than %d characters, try again with less amount", chatutils.MAX_MSG_LEN)
                                 helper()
                             else:
                                 header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["MSG"], sender_id,
                                                                    int(destination_id), seq_number)
                                 chatutils.deliver_message(sender_sock, header, chatutils.MESSAGE_TYPES["MSG"], len(message_contents),
                                                           message_contents)
-                                # message = sender_sock.recv(chatutils.HEADER_SIZE)
-                                # print(struct.unpack(chatutils.HEADER_FORMAT, message))
-
-                                # sys.stdout.write(data)
-                                # sys.stdout.write('You can type help anytime to see commands available\n[Me (#%d)] ' % sender_id)
-                                sys.stdout.write('Me (#%d): ' % sender_id)
-                                sys.stdout.flush()
         except KeyboardInterrupt:
             header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["FLW"], sender_id, chatutils.SRV_ID, seq_number)
             chatutils.deliver_message(sender_sock, header, chatutils.MESSAGE_TYPES["FLW"])
