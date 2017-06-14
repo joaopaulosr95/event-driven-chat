@@ -75,7 +75,7 @@ def deliver_message(to_sock, header, message_type, message_size=None, message_co
     while True:
         try:
             if message_type == MESSAGE_TYPES["MSG"] and message_size:
-                to_sock.send(header + str(message_size) + message_contents)
+                to_sock.send(header + struct.pack("!H", message_size) + message_contents)
             else:
                 to_sock.send(header)
 
