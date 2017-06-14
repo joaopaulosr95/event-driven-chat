@@ -274,24 +274,24 @@ def server(port):
 
                         # Does the client sock match with proper id?
                         valid_from = True
-                        if not is_valid_client(sock, client_list, client_from_id) and not client_to_id == chatutils.SRV_ID:
+                        '''if not is_valid_client(sock, client_list, client_from_id) and not client_to_id == chatutils.SRV_ID:
                             header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id, seq_number)
                             try:
                                 chatutils.deliver_message(sock, header, chatutils.MESSAGE_TYPES["ERRO"])
                             except:
                                 pass
                             finally:
-                                valid_from = False
+                                valid_from = False'''
 
                         valid_to = True
-                        if not is_valid_client(sock, client_list, client_to_id) and not client_to_id == chatutils.SRV_ID:
+                        '''if not is_valid_client(sock, client_list, client_to_id) and not client_to_id == chatutils.SRV_ID:
                             header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id, seq_number)
                             try:
                                 chatutils.deliver_message(sock, header, chatutils.MESSAGE_TYPES["ERRO"])
                             except:
                                 pass
                             finally:
-                                valid_to = False
+                                valid_to = False'''
 
                         if valid_from and valid_to:
 
@@ -341,7 +341,7 @@ def server(port):
                                     raise
 
                                 msg_length = struct.unpack("!H", sock.recv(2))[0]
-                                msg_contents = sock.recv(msg_length)
+                                msg_contents = sock.recv(struct.calcsize(str(msg_length)+"s"))
 
                                 # Its a broadcast
                                 if client_to_id == 0:
@@ -349,9 +349,15 @@ def server(port):
 
                                 # Message has a specific destination
                                 else:
-                                    client_to = get_client_by_parameter(client_list, "viewer_id", client_to_id)
+                                    # Destination it's a sender or a viewer?
+                                    if client_to_id in range(chatutils.VIEWER_RANGE_MIN, chatutils.VIEWER_RANGE_MAX):
+                                        client_to = get_client_by_parameter(client_list, "viewer_id", client_to_id)
+                                    elif client_to_id in range(chatutils.SENDER_RANGE_MIN, chatutils.SENDER_RANGE_MAX):
+                                        client_to = get_client_by_parameter(client_list, "sender_id", client_to_id)
+
                                     try:
-                                        chatutils.deliver_message(client_to["viewer_sock"], data, chatutils.MESSAGE_TYPES["MSG"], msg_contents)
+                                        chatutils.deliver_message(client_to["viewer_sock"], data, chatutils.MESSAGE_TYPES["MSG"],
+                                                                  msg_length, msg_contents)
                                     except:
                                         # TODO: better error handling, but which?
                                         pass
