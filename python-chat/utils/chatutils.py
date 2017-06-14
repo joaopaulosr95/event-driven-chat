@@ -76,6 +76,8 @@ def deliver_message(to_sock, header, message_type, message_size=None, message_co
         try:
             if message_type == MESSAGE_TYPES["MSG"] and message_size:
                 to_sock.send(header + struct.pack("!H", message_size) + message_contents)
+            elif message_type == MESSAGE_TYPES["CLIST"]:
+                to_sock.send(header + struct.pack("!H", message_size/2), message_contents)
             else:
                 to_sock.send(header)
 
