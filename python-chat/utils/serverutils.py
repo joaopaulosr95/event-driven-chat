@@ -222,7 +222,7 @@ def server(port):
 
                             # Sender already has a predefined viewer
                             else:
-                                viewer = get_client_by_parameter(client_list, "viewer_id", viewer_id)
+                                viewer = get_client_by_parameter(client_list, "viewer_id", client_from_id)
 
                                 # Viewer incorrect id
                                 if viewer is None:
