@@ -230,7 +230,7 @@ def server(port):
                         if client_from_id == 0 and viewers_connected < (chatutils.VIEWER_RANGE_MAX - chatutils.VIEWER_RANGE_MIN):
 
                             viewer_id = attach_client(client_list, "viewer")
-                            client_list.append({"viewer_id": viewer_id, "viewer_sock": sock})
+                            client_list.append({"viewer_id": viewer_id, "viewer_sock": sock, "sender_id": None, "sender_sock": None})
                             header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, viewer_id, seq_number)
                             chatutils.deliver_message(sock, header, chatutils.MESSAGE_TYPES["OK"])
 
@@ -247,7 +247,7 @@ def server(port):
                             if not get_client_type(client_from_id) == 'viewer':
 
                                 sender_id = attach_client(client_list, "sender")
-                                client_list.append({"sender_id": sender_id, "sender_sock": sock})
+                                client_list.append({"viewer_id": None, "viewer_sock": None, "sender_id": sender_id, "sender_sock": sock})
                                 header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, sender_id, seq_number)
                                 chatutils.deliver_message(sock, header, chatutils.MESSAGE_TYPES["OK"])
 
@@ -324,6 +324,11 @@ def server(port):
                                 if client["viewer_id"] is None and client["viewer_sock"] is None \
                                         and client["sender_id"] is None and client["sender_sock"] is None:
                                     client_list.remove(client)
+
+                                log = "Client #%d left" % client_from_id
+                                header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["MSG"], chatutils.SRV_ID, client_from_id, srv_seq_number)
+                                broadcast(client_list, header, chatutils.MESSAGE_TYPES["MSG"], log)
+                                srv_seq_number += 1
 
                             # The client just sent a message
                             elif message_type_id == chatutils.MESSAGE_TYPES["MSG"]:

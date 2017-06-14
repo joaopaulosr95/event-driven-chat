@@ -115,8 +115,7 @@ def helper():
 def sender(host, port, viewer_id=None):
     logger = logging.getLogger(__name__)
 
-    sender_id = 0
-    sender_seq_number = 0
+    seq_number = 0
     sender_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # connect to remote host
@@ -126,7 +125,7 @@ def sender(host, port, viewer_id=None):
         print 'Unable to connect'
         sys.exit()
 
-    initial_message = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OI"], viewer_id if viewer_id else 9999, chatutils.SRV_ID, sender_seq_number)
+    initial_message = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OI"], viewer_id if viewer_id else 9999, chatutils.SRV_ID, seq_number)
     chatutils.deliver_message(sender_sock, initial_message, chatutils.MESSAGE_TYPES["OI"])
 
     while True:
@@ -139,7 +138,7 @@ def sender(host, port, viewer_id=None):
 
     print("Just received id #%d" % sender_id)
     sys.stdout.write('You can type help anytime to see commands available\n')
-    sys.stdout.write('Me (#%d): ' % sender_id);
+    sys.stdout.write('Me (#%d): ' % sender_id)
     sys.stdout.flush()
 
     sock_list = [sender_sock, sys.stdin]
@@ -151,17 +150,14 @@ def sender(host, port, viewer_id=None):
             for sock in readable:
                 if sock == sender_sock:
                     data = sock.recv(chatutils.HEADER_SIZE)
-                    message_type, from_id, to_id, _ = struct.unpack(chatutils.HEADER_FORMAT, data)
+                    message_type, from_id, to_id, seq_number = struct.unpack(chatutils.HEADER_FORMAT, data)
                     if message_type == chatutils.MESSAGE_TYPES["OK"]:
-                        sender_seq_number += 1
-
-                    # sys.stdout.write(data)
-
+                        seq_number += 1
                 else:
                     user_input = raw_input()
                     if user_input == "help":
                         helper()
-                        sys.stdout.write('Me (#%d): ' % sender_id);
+                        sys.stdout.write('Me (#%d): ' % sender_id)
                         sys.stdout.flush()
                     else:
                         message_split = user_input.split("#")
@@ -170,9 +166,11 @@ def sender(host, port, viewer_id=None):
 
                         else:
                             destination_id, message_contents = message_split
+                            destination_id = int(destination_id)
                             if message_contents.lower() == "creq":
                                 header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["CREQ"], sender_id, destination_id, seq_number)
-                                # TODO AGUARDAR OK
+                                chatutils.deliver_message(sender_sock, header, chatutils.MESSAGE_TYPES["CREQ"], len(message_contents),
+                                                          message_contents)
 
                             elif len(message_contents) >= chatutils.MAX_MSG_LEN:
                                 logging.error("Cannot read more than %d characters, try again with less amount", chatutils.MAX_MSG_LEN)
@@ -182,15 +180,15 @@ def sender(host, port, viewer_id=None):
                                                                    int(destination_id), seq_number)
                                 chatutils.deliver_message(sender_sock, header, chatutils.MESSAGE_TYPES["MSG"], len(message_contents),
                                                           message_contents)
-                                #message = sender_sock.recv(chatutils.HEADER_SIZE)
-                                #print(struct.unpack(chatutils.HEADER_FORMAT, message))
+                                # message = sender_sock.recv(chatutils.HEADER_SIZE)
+                                # print(struct.unpack(chatutils.HEADER_FORMAT, message))
 
                                 # sys.stdout.write(data)
-                                #sys.stdout.write('You can type help anytime to see commands available\n[Me (#%d)] ' % sender_id)
-                                sys.stdout.write('Me (#%d): ' % sender_id);
+                                # sys.stdout.write('You can type help anytime to see commands available\n[Me (#%d)] ' % sender_id)
+                                sys.stdout.write('Me (#%d): ' % sender_id)
                                 sys.stdout.flush()
         except KeyboardInterrupt:
-            header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["FLW"], sender_id, chatutils.SRV_ID, sender_seq_number)
+            header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["FLW"], sender_id, chatutils.SRV_ID, seq_number)
             chatutils.deliver_message(sender_sock, header, chatutils.MESSAGE_TYPES["FLW"])
             break
 
