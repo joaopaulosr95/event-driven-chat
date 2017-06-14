@@ -52,13 +52,13 @@ if __name__ == "__main__":
 
     # create the parser for the "sender" command
     parser_b = subparsers.add_parser('sender')
-    parser_b.add_argument('-vid', '--viewer_id', type=int, default=-1, metavar="ID", help="id of running viewer")
+    parser_b.add_argument('-vid', '--viewer_id', type=int, metavar="ID", help="id of running viewer")
 
     opt = parser.parse_args()
     host, port = opt.server.split(':')
 
     if opt.behavior == 'sender':
-        clientutils.sender(host, int(port), opt.viewer_id)
+        clientutils.sender(host, int(port), opt.viewer_id if opt.viewer_id else None)
 
     else:
         clientutils.viewer(host, int(port))
