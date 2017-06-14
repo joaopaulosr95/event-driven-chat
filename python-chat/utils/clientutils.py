@@ -76,7 +76,7 @@ def viewer(host, port):
             data = viewer_sock.recv(chatutils.HEADER_SIZE)
             message_type_id, client_from_id, client_to_id, seq_number = struct.unpack(chatutils.HEADER_FORMAT, data)
             if message_type_id == chatutils.MESSAGE_TYPES["MSG"]:
-                header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, client_from_id,
+                header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OK"], viewer_id, client_from_id,
                                                    seq_number)
                 try:
                     chatutils.deliver_message(viewer_sock, header, chatutils.MESSAGE_TYPES["OK"])
@@ -86,7 +86,7 @@ def viewer(host, port):
                 msg_length = struct.unpack("!H", viewer_sock.recv(2))[0]
                 msg_contents = viewer_sock.recv(msg_length)
 
-                print "Mensagem de ", client_from_id, ": ", msg_contents
+                print "Mensagem de", client_from_id, ":", msg_contents
         except KeyboardInterrupt:
             header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["FLW"], viewer_id, chatutils.SRV_ID,
                                                viewer_seq_number)
@@ -172,12 +172,15 @@ def sender(host, port, viewer_id=None):
                                 # TODO AGUARDAR OK
 
                             elif len(message_contents) >= chatutils.MAX_MSG_LEN:
-                                logging.error("Cannot read more than %d characters, try again with less amount", chatutils.MAX_BUFFER)
+                                logging.error("Cannot read more than %d characters, try again with less amount", chatutils.MAX_MSG_LEN)
                                 helper()
                             else:
-                                chatutils.deliver_message(sock, header, chatutils.MESSAGE_TYPES[""], message_contents)
-                                message = sock.recv(chatutils.HEADER_SIZE)
-                                print(struct.unpack(chatutils.HEADER_FORMAT, message))
+                                header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["MSG"], sender_id,
+                                                                   int(destination_id), seq_number)
+                                chatutils.deliver_message(sender_sock, header, chatutils.MESSAGE_TYPES["MSG"], len(message_contents),
+                                                          message_contents)
+                                #message = sender_sock.recv(chatutils.HEADER_SIZE)
+                                #print(struct.unpack(chatutils.HEADER_FORMAT, message))
 
                                 # sys.stdout.write(data)
                                 sys.stdout.write('You can type help anytime to see commands available\n[Me (#%d)] ' % sender_id)
