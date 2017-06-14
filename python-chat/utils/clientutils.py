@@ -45,7 +45,55 @@ import chatutils
 """
 
 def viewer(host, port):
-    pass
+    logger = logging.getLogger(__name__)
+
+    viewer_id = 0
+    viewer_seq_number = 0
+    viewer_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # connect to remote host
+    try:
+        viewer_sock.connect((host, port))
+    except:
+        print 'Unable to connect'
+        sys.exit()
+
+    initial_message = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OI"], 0, chatutils.SRV_ID, viewer_seq_number)
+    chatutils.deliver_message(viewer_sock, initial_message, chatutils.MESSAGE_TYPES["OI"])
+
+    while True:
+        try:
+            data = viewer_sock.recv(chatutils.HEADER_SIZE)
+            message_type, from_id, sender_id, seq_number = struct.unpack(chatutils.HEADER_FORMAT, data)
+            break
+        except:
+            continue
+
+    print("Just received id #%d" % sender_id)
+
+    while True:
+        try:
+            data = viewer_sock.recv(chatutils.HEADER_SIZE)
+            message_type_id, client_from_id, client_to_id, seq_number = struct.unpack(chatutils.HEADER_FORMAT, data)
+            if message_type_id == chatutils.MESSAGE_TYPES["MSG"]:
+                header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, client_from_id,
+                                                   seq_number)
+                try:
+                    chatutils.deliver_message(viewer_sock, header, chatutils.MESSAGE_TYPES["OK"])
+                except:
+                    raise
+
+                msg_length = struct.unpack("!H", viewer_sock.recv(2))[0]
+                msg_contents = viewer_sock.recv(msg_length)
+
+                print "Mensagem de ", client_from_id, ": ", msg_contents
+        except KeyboardInterrupt:
+            header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["FLW"], viewer_id, chatutils.SRV_ID,
+                                               viewer_seq_number)
+            chatutils.deliver_message(viewer_sock, header, chatutils.MESSAGE_TYPES["FLW"])
+            break
+
+    viewer_sock.close()
 
 """
 | ===================================================================
@@ -70,9 +118,15 @@ def sender(host, port, viewer_id=None):
     sender_id = 0
     sender_seq_number = 0
     sender_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sender_sock.connect((host, port))
 
-    initial_message = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OI"], viewer_id if viewer_id else 0, chatutils.SRV_ID, sender_seq_number)
+    # connect to remote host
+    try:
+        sender_sock.connect((host, port))
+    except:
+        print 'Unable to connect'
+        sys.exit()
+
+    initial_message = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OI"], viewer_id if viewer_id else 9999, chatutils.SRV_ID, sender_seq_number)
     chatutils.deliver_message(sender_sock, initial_message, chatutils.MESSAGE_TYPES["OI"])
 
     while True:
