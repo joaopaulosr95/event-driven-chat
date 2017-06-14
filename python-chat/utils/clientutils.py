@@ -138,6 +138,9 @@ def sender(host, port, viewer_id=None):
             continue
 
     print("Just received id #%d" % sender_id)
+    sys.stdout.write('You can type help anytime to see commands available\n')
+    sys.stdout.write('Me (#%d): ' % sender_id);
+    sys.stdout.flush()
 
     sock_list = [sender_sock, sys.stdin]
     while True:
@@ -153,13 +156,13 @@ def sender(host, port, viewer_id=None):
                         sender_seq_number += 1
 
                     # sys.stdout.write(data)
-                    sys.stdout.write('You can type help anytime to see commands available\n')
-                    sys.stdout.flush()
 
                 else:
-                    user_input = raw_input('Me (#%d): ' % sender_id)
+                    user_input = raw_input()
                     if user_input == "help":
                         helper()
+                        sys.stdout.write('Me (#%d): ' % sender_id);
+                        sys.stdout.flush()
                     else:
                         message_split = user_input.split("#")
                         if len(message_split) != 2:
@@ -183,7 +186,8 @@ def sender(host, port, viewer_id=None):
                                 #print(struct.unpack(chatutils.HEADER_FORMAT, message))
 
                                 # sys.stdout.write(data)
-                                sys.stdout.write('You can type help anytime to see commands available\n[Me (#%d)] ' % sender_id)
+                                #sys.stdout.write('You can type help anytime to see commands available\n[Me (#%d)] ' % sender_id)
+                                sys.stdout.write('Me (#%d): ' % sender_id);
                                 sys.stdout.flush()
         except KeyboardInterrupt:
             header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["FLW"], sender_id, chatutils.SRV_ID, sender_seq_number)
