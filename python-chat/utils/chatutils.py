@@ -87,4 +87,4 @@ def deliver_message(to_sock, header, message_type, message_size=None, message_co
             else:
                 break
         except:  # TODO better error handling
-            raise
+            pass
