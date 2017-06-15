@@ -91,13 +91,10 @@ def get_clist(client_list):
 """
 
 def broadcast(client_list, message_type, from_id, seq_number, message):
-    header = struct.pack(chatutils.HEADER_FORMAT, type, from_id, 0, seq_number)
-
     for client in client_list:
         if client["viewer_sock"] is not None:
-            chatutils.deliver_message(client["viewer_sock"], header, message_type, len(message), message)
-        if client["sender_sock"] is not None:
-            chatutils.deliver_message(client["sender_sock"], header, message_type, len(message), message)
+            chatutils.deliver_message(client["viewer_sock"], message_type, from_id, client["viewer_id"], seq_number,
+                                      len(message), message)
 
 """
 | ===================================================================
@@ -230,7 +227,7 @@ def process_message(data, sock, sock_list, client_list, srv_seq_number, viewers_
             elif client_from_id != 0 and senders_connected < (chatutils.SENDER_RANGE_MAX - chatutils.SENDER_RANGE_MIN):
 
                 # Sender is not gonna attach itself to any viewer
-                if get_client_type(client_from_id) is not 'viewer':
+                if not get_client_type(client_from_id) == 'viewer':
                     sender_id = attach_client(client_list, "sender")
                     client_list.append(
                         {"viewer_id": None, "viewer_sock": None, "sender_id": sender_id, "sender_sock": sock})
@@ -338,9 +335,9 @@ def process_message(data, sock, sock_list, client_list, srv_seq_number, viewers_
             else:
                 client_type = get_client_type(client_to_id)
                 client_to = get_client_by_parameter(client_list, client_type + "_id", client_to_id)
-                if client_to:
-                    chatutils.deliver_message(client_to[client_type + "_sock"], data, chatutils.MESSAGE_TYPES["MSG"],
-                                              message_len, message)
+                if client_to["viewer_sock"]:
+                    chatutils.deliver_message(client_to["viewer_sock"], chatutils.MESSAGE_TYPES["MSG"], client_from_id,
+                                              client_to_id, seq_number, message_len, message)
                 else:
                     chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id,
                                               seq_number)
