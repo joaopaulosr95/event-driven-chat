@@ -50,6 +50,7 @@ def viewer(host, port):
     viewer_id = 0
     viewer_seq_number = 0
     viewer_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    viewer_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     # connect to remote host
     try:
@@ -58,8 +59,7 @@ def viewer(host, port):
         print 'Unable to connect'
         sys.exit()
 
-    initial_message = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OI"], 0, chatutils.SRV_ID, viewer_seq_number)
-    chatutils.deliver_message(viewer_sock, initial_message, chatutils.MESSAGE_TYPES["OI"])
+    chatutils.deliver_message(viewer_sock, chatutils.MESSAGE_TYPES["OI"], 0, chatutils.SRV_ID, viewer_seq_number)
 
     while True:
         try:
@@ -76,21 +76,16 @@ def viewer(host, port):
             data = viewer_sock.recv(chatutils.HEADER_SIZE)
             message_type_id, client_from_id, client_to_id, seq_number = struct.unpack(chatutils.HEADER_FORMAT, data)
             if message_type_id == chatutils.MESSAGE_TYPES["MSG"]:
-                header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OK"], viewer_id, client_from_id,
-                                                   seq_number)
-                try:
-                    chatutils.deliver_message(viewer_sock, header, chatutils.MESSAGE_TYPES["OK"])
-                except:
-                    raise
+                chatutils.deliver_message(viewer_sock, chatutils.MESSAGE_TYPES["OK"], viewer_id, client_from_id,
+                                          seq_number)
 
                 msg_length = struct.unpack("!H", viewer_sock.recv(2))[0]
                 msg_contents = viewer_sock.recv(msg_length)
 
                 print "Mensagem de", client_from_id, ":", msg_contents
         except KeyboardInterrupt:
-            header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["FLW"], viewer_id, chatutils.SRV_ID,
-                                               viewer_seq_number)
-            chatutils.deliver_message(viewer_sock, header, chatutils.MESSAGE_TYPES["FLW"])
+            chatutils.deliver_message(viewer_sock, chatutils.MESSAGE_TYPES["FLW"], viewer_id, chatutils.SRV_ID,
+                                      viewer_seq_number)
             break
 
     viewer_sock.close()
@@ -117,6 +112,7 @@ def sender(host, port, viewer_id=None):
 
     seq_number = 0
     sender_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sender_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     # connect to remote host
     try:
@@ -125,8 +121,8 @@ def sender(host, port, viewer_id=None):
         print 'Unable to connect'
         sys.exit()
 
-    initial_message = chatutils.prepare_message(chatutils.MESSAGE_TYPES["OI"], viewer_id if viewer_id else 9999, chatutils.SRV_ID, seq_number)
-    chatutils.deliver_message(sender_sock, initial_message, chatutils.MESSAGE_TYPES["OI"])
+    chatutils.deliver_message(sender_sock, chatutils.MESSAGE_TYPES["OI"], viewer_id if viewer_id else 9999,
+                              chatutils.SRV_ID, seq_number)
 
     while True:
         try:
@@ -161,21 +157,20 @@ def sender(host, port, viewer_id=None):
                             destination_id, message_contents = message_split
                             destination_id = int(destination_id)
                             if message_contents.lower() == "creq":
-                                header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["CREQ"], sender_id, destination_id, seq_number)
-                                chatutils.deliver_message(sender_sock, header, chatutils.MESSAGE_TYPES["CREQ"], len(message_contents),
+                                chatutils.deliver_message(sender_sock, chatutils.MESSAGE_TYPES["CREQ"], sender_id,
+                                                          int(destination_id), seq_number, len(message_contents),
                                                           message_contents)
 
                             elif len(message_contents) >= chatutils.MAX_MSG_LEN:
-                                print("Cannot read more than %d characters, try again with less amount", chatutils.MAX_MSG_LEN)
+                                print("Cannot read more than %d characters, try again with less amount",
+                                      chatutils.MAX_MSG_LEN)
                                 helper()
                             else:
-                                header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["MSG"], sender_id,
-                                                                   int(destination_id), seq_number)
-                                chatutils.deliver_message(sender_sock, header, chatutils.MESSAGE_TYPES["MSG"], len(message_contents),
+                                chatutils.deliver_message(sender_sock, chatutils.MESSAGE_TYPES["MSG"], sender_id,
+                                                          int(destination_id), seq_number, len(message_contents),
                                                           message_contents)
         except KeyboardInterrupt:
-            header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["FLW"], sender_id, chatutils.SRV_ID, seq_number)
-            chatutils.deliver_message(sender_sock, header, chatutils.MESSAGE_TYPES["FLW"])
+            chatutils.deliver_message(sender_sock, chatutils.MESSAGE_TYPES["FLW"], sender_id, chatutils.SRV_ID,
+                                      seq_number)
             break
-
     sender_sock.close()

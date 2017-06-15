@@ -33,6 +33,8 @@ SOFTWARE.
 """
 import struct
 
+import logging
+
 """
 | ===================================================================
 | Constants definition
@@ -58,33 +60,31 @@ HEADER_SIZE = struct.calcsize(HEADER_FORMAT)
 
 """
 | ===================================================================
-| prepare_message: packs a header
+| deliver_message: sends a message to a defined host
 | ===================================================================
 """
 
-def prepare_message(type, from_id, to_id, seq_number):
-    return struct.pack(HEADER_FORMAT, type, from_id, to_id, seq_number)
+def deliver_message(to_sock, message_type, from_id, to_id, seq_number, message_len=None, message=None):
+    logger = logging.getLogger(__name__)
+    header = struct.pack(HEADER_FORMAT, message_type, from_id, to_id, seq_number)
 
-"""
-| ===================================================================
-| deliver_message: sends a message to the right host or broadcast it
-| ===================================================================
-"""
-
-def deliver_message(to_sock, header, message_type, message_size=None, message_contents=None):
-    while True:
+    # 5 tries to deliver the message
+    for i in range(5):
         try:
-            if message_type == MESSAGE_TYPES["MSG"] and message_size:
-                to_sock.send(header + struct.pack("!H", message_size) + message_contents)
+            if message_type == MESSAGE_TYPES["MSG"] and message_len:
+                to_sock.send(header + struct.pack("!H", message_len) + message)
             elif message_type == MESSAGE_TYPES["CLIST"]:
-                to_sock.send(header + struct.pack("!H", message_size/2), message_contents)
+                to_sock.send(header + struct.pack("!H", message_len), message)
             else:
                 to_sock.send(header)
 
-            # If the message we just sent is not a confirmation, then we should wait for a confirmation
-            if message_type != MESSAGE_TYPES["OI"] and message_type != MESSAGE_TYPES["OK"] and message_type != MESSAGE_TYPES["ERRO"]:
+            if message_type != MESSAGE_TYPES["OI"] and message_type != MESSAGE_TYPES["OK"] \
+                    and message_type != MESSAGE_TYPES["ERRO"]:
                 answer = struct.unpack(HEADER_FORMAT, to_sock.recv(HEADER_SIZE))[0]
                 if answer == MESSAGE_TYPES["OK"]:
+                    break
+                elif answer == MESSAGE_TYPES["ERRO"]:
+                    logger.warning("Fail to deliver message")
                     break
             else:
                 break
