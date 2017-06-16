@@ -349,7 +349,8 @@ def process_message(data, sock, sock_list, client_list, srv_seq_number, viewers_
 
 	# The client asked for a list of clients
 	elif message_type_id == chatutils.MESSAGE_TYPES["CREQ"]:
-		if client_to_id == chatutils.SRV_ID and is_valid_client(sock, client_list, client_from_id):
+
+		if is_valid_client(sock, client_list, client_from_id):
 			chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, client_from_id, seq_number)
 
 			clist, clist_len = get_clist(client_list)
@@ -359,7 +360,8 @@ def process_message(data, sock, sock_list, client_list, srv_seq_number, viewers_
 				broadcast(client_list, chatutils.MESSAGE_TYPES["CLIST"], chatutils.SRV_ID, srv_seq_number, clist)
 			else:
 				client_to = get_client_by_parameter(client_list, "viewer_id", client_to_id)
-				chatutils.deliver_message(client_to["viewer_sock"], data, chatutils.MESSAGE_TYPES["CLIST"], clist)
+				chatutils.deliver_message(client_to["viewer_sock"], chatutils.MESSAGE_TYPES["CLIST"], client_from_id,
+                              client_to_id, seq_number, clist_len, clist)
 			srv_seq_number += 1
 		else:
 			''' Possible error causes
