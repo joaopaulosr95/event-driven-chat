@@ -24,19 +24,15 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-==> Gabriel de Oliveira Campos Pacheco  <gabriel.pacheco@dcc.ufmg.br>   2013062898
-==> Guilherme Augusto de Sousa          <gadsousa@gmail.com>            2013062944
-==> Joao Paulo Sacchetto Ribeiro Bastos <joaopaulosr95@gmail.com>       2013073440
-==> Trabalho pratico 2
-==> 19-06-2017
 """
+
 import argparse
 import logging
-from ..utils import clientutils
+
+from pythonchat import clientutils
 
 # Logging setup
-logging.basicConfig(level=logging.DEBUG, format="[%(asctime)s]%(message)s")
+logging.basicConfig(level=logging.DEBUG, format="[%(asctime)s] %(message)s")
 
 if __name__ == "__main__":
 
@@ -44,7 +40,8 @@ if __name__ == "__main__":
 
     # create the top-level parser
     parser = argparse.ArgumentParser()
-    parser.add_argument('server', type=str, default='127.0.1.1:65535', metavar="host:port", help="host and port of running server")
+    parser.add_argument('server', type=str, default='127.0.1.1:65535', metavar="host:port",
+                        help="host and port of running server")
     subparsers = parser.add_subparsers(dest='behavior')
 
     # create the parser for the "viewer" command

@@ -2,8 +2,8 @@
 # coding=utf-8
 
 """
-Copyright (c) 2017 
-Gabriel Pacheco     <gabriel.pacheco@dcc.ufmg.br> 
+Copyright (c) 2017
+Gabriel Pacheco     <gabriel.pacheco@dcc.ufmg.br>
 Guilherme Sousa     <gadsousa@gmail.com>
 Joao Paulo Bastos   <joaopaulosr95@gmail.com>
 
@@ -24,22 +24,19 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-==> Gabriel de Oliveira Campos Pacheco  <gabriel.pacheco@dcc.ufmg.br>   2013062898
-==> Guilherme Augusto de Sousa          <gadsousa@gmail.com>            2013062944
-==> Joao Paulo Sacchetto Ribeiro Bastos <joaopaulosr95@gmail.com>       2013073440
-==> Trabalho pratico 2
-==> 19-06-2017
 """
 import struct
-
 import logging
+
+# Logging setup
+logging.basicConfig(level=logging.DEBUG, format="[%(asctime)s] %(message)s")
 
 """
 | ===================================================================
 | Constants definition
 | ===================================================================
 """
+
 ERROR_FLAG = -1
 
 MAX_MSG_LEN = 65535
@@ -71,15 +68,11 @@ def deliver_message(to_sock, message_type, from_id, to_id, seq_number, message_l
     # 5 tries to deliver the message
     for i in range(5):
         try:
-            if message_type == MESSAGE_TYPES["MSG"] and message_len:
-                to_sock.send(header + struct.pack("!H", message_len) + message)
-            elif message_type == MESSAGE_TYPES["CLIST"]:
-                to_sock.send(header + struct.pack("!H", message_len) + message)
-            else:
-                to_sock.send(header)
+            to_sock.send(header)
+            if message_type in (MESSAGE_TYPES["CLIST"], MESSAGE_TYPES["MSG"]):
+                to_sock.send(struct.pack("!H", message_len) + message)
 
-            if message_type != MESSAGE_TYPES["OI"] and message_type != MESSAGE_TYPES["OK"] \
-                    and message_type != MESSAGE_TYPES["ERRO"]:
+            if message_type not in (MESSAGE_TYPES["OI"], MESSAGE_TYPES["OK"], MESSAGE_TYPES["ERRO"]):
                 answer = struct.unpack(HEADER_FORMAT, to_sock.recv(HEADER_SIZE))[0]
                 if answer == MESSAGE_TYPES["OK"]:
                     break

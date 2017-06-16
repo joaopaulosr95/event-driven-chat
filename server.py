@@ -24,22 +24,17 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-==> Gabriel de Oliveira Campos Pacheco  <gabriel.pacheco@dcc.ufmg.br>   2013062898
-==> Guilherme Augusto de Sousa          <gadsousa@gmail.com>            2013062944
-==> Joao Paulo Sacchetto Ribeiro Bastos <joaopaulosr95@gmail.com>       2013073440
-==> Trabalho pratico 2
-==> 19-06-2017
 """
+
 import argparse
+import logging
+import select
 import socket
 
-import logging
+from pythonchat import chatutils, serverutils
 
-import select
-
-from ..utils import chatutils
-from ..utils import serverutils
+# Logging setup
+logging.basicConfig(level=logging.DEBUG, format="[%(asctime)s] %(message)s")
 
 if __name__ == "__main__":
     logger = logging.getLogger(__name__)
@@ -80,14 +75,12 @@ if __name__ == "__main__":
                     data = sock.recv(chatutils.HEADER_SIZE)
                     serverutils.process_message(data, sock, sock_list, client_list, srv_seq_number, viewers_connected,
                                                 senders_connected)
-        except:
-            pass
-        '''except KeyboardInterrupt:
+        except KeyboardInterrupt:
             try:
                 serverutils.handle_shutdown(client_list)
             except:
                 log = "Oh no! Something very very messy just happened. Abort mission!"
                 logger.error(log)
             finally:
-                break'''
+                break
     srv_sock.close()
