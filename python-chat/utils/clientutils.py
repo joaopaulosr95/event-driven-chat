@@ -50,7 +50,6 @@ def viewer(host, port):
     viewer_id = 0
     viewer_seq_number = 0
     viewer_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    viewer_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     # connect to remote host
     try:
@@ -112,7 +111,6 @@ def sender(host, port, viewer_id=None):
 
     seq_number = 0
     sender_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sender_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     # connect to remote host
     try:
@@ -173,4 +171,5 @@ def sender(host, port, viewer_id=None):
             chatutils.deliver_message(sender_sock, chatutils.MESSAGE_TYPES["FLW"], sender_id, chatutils.SRV_ID,
                                       seq_number)
             break
+
     sender_sock.close()
