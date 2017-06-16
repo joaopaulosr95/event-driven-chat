@@ -82,6 +82,15 @@ def viewer(host, port):
                 msg_contents = viewer_sock.recv(msg_length)
 
                 print "Mensagem de", client_from_id, ":", msg_contents
+
+            elif message_type_id == chatutils.MESSAGE_TYPES["CLIST"]:
+                chatutils.deliver_message(viewer_sock, chatutils.MESSAGE_TYPES["OK"], viewer_id, chatutils.SRV_ID, seq_number)
+
+                clist_size = struct.unpack("!H", viewer_sock.recv(2))[0]
+                clist = ["%d" % struct.unpack("!H", viewer_sock.recv(2)) for i in range(clist_size)]
+
+                print "Lista de clientes:", clist
+
         except KeyboardInterrupt:
             chatutils.deliver_message(viewer_sock, chatutils.MESSAGE_TYPES["FLW"], viewer_id, chatutils.SRV_ID,
                                       viewer_seq_number)
