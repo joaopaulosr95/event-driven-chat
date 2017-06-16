@@ -32,11 +32,10 @@ SOFTWARE.
 ==> 19-06-2017
 """
 import logging
-import socket
 import struct
 import random
-import select
 import chatutils
+
 
 # Logging setup
 logging.basicConfig(level=logging.DEBUG, format="[%(asctime)s] %(message)s")
@@ -48,11 +47,11 @@ logging.basicConfig(level=logging.DEBUG, format="[%(asctime)s] %(message)s")
 """
 
 def get_client_type(client_id):
-    if client_id in range(chatutils.VIEWER_RANGE_MIN, chatutils.VIEWER_RANGE_MAX):
-        return "viewer"
-    elif client_id in range(chatutils.SENDER_RANGE_MIN, chatutils.SENDER_RANGE_MAX):
-        return "sender"
-    return None
+	if client_id in range(chatutils.VIEWER_RANGE_MIN, chatutils.VIEWER_RANGE_MAX):
+		return "viewer"
+	elif client_id in range(chatutils.SENDER_RANGE_MIN, chatutils.SENDER_RANGE_MAX):
+		return "sender"
+	return None
 
 """
 | ===================================================================
@@ -61,10 +60,10 @@ def get_client_type(client_id):
 """
 
 def get_client_by_parameter(client_list, parameter_key, parameter_val):
-    for client in client_list:
-        if client[parameter_key] == parameter_val:
-            return client
-    return None
+	for client in client_list:
+		if client[parameter_key] == parameter_val:
+			return client
+	return None
 
 """
 | ===================================================================
@@ -73,16 +72,16 @@ def get_client_by_parameter(client_list, parameter_key, parameter_val):
 """
 
 def get_clist(client_list):
-    clist = ''
-    clist_len = 0
-    for client in client_list:
-        if client["viewer_id"]:
-            clist = clist + struct.pack("!H", client["viewer_id"])
-            clist_len += 1
-        if client["sender_id"]:
-            clist = clist + struct.pack("!H", client["sender_id"])
-            clist_len += 1
-    return clist, clist_len
+	clist = ''
+	clist_len = 0
+	for client in client_list:
+		if client["viewer_id"]:
+			clist = clist + struct.pack("!H", client["viewer_id"])
+			clist_len += 1
+		if client["sender_id"]:
+			clist = clist + struct.pack("!H", client["sender_id"])
+			clist_len += 1
+	return clist, clist_len
 
 """
 | ===================================================================
@@ -91,10 +90,10 @@ def get_clist(client_list):
 """
 
 def broadcast(client_list, message_type, from_id, seq_number, message):
-    for client in client_list:
-        if client["viewer_sock"] is not None:
-            chatutils.deliver_message(client["viewer_sock"], message_type, from_id, client["viewer_id"], seq_number,
-                                      len(message), message)
+	for client in client_list:
+		if client["viewer_sock"] is not None:
+			chatutils.deliver_message(client["viewer_sock"], message_type, from_id, client["viewer_id"], seq_number,
+									  len(message), message)
 
 """
 | ===================================================================
@@ -103,37 +102,37 @@ def broadcast(client_list, message_type, from_id, seq_number, message):
 """
 
 def handle_shutdown(client_list):
-    for client in client_list:
-        if client["viewer_sock"] is not None:
-            while True:
-                header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["FLW"], chatutils.SRV_ID,
-                                                   client["viewer_id"], chatutils.ERROR_FLAG)
-                chatutils.deliver_message(client["viewer_sock"], header)
-                try:
-                    answer = client["viewer_sock"].recv(chatutils.HEADER_SIZE)
-                    message_type = struct.unpack(chatutils.HEADER_FORMAT, answer)[0]
-                    if message_type == chatutils.MESSAGE_TYPES["OK"]:
-                        break
-                except:
-                    raise
-            dettach_client(client, "viewer")
+	for client in client_list:
+		if client["viewer_sock"] is not None:
+			while True:
+				header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["FLW"], chatutils.SRV_ID,
+												   client["viewer_id"], chatutils.ERROR_FLAG)
+				chatutils.deliver_message(client["viewer_sock"], header)
+				try:
+					answer = client["viewer_sock"].recv(chatutils.HEADER_SIZE)
+					message_type = struct.unpack(chatutils.HEADER_FORMAT, answer)[0]
+					if message_type == chatutils.MESSAGE_TYPES["OK"]:
+						break
+				except:
+					raise
+			dettach_client(client, "viewer")
 
-        if client["sender_sock"] is not None:
-            while True:
-                header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["FLW"], chatutils.SRV_ID,
-                                                   client["sender_id"], chatutils.ERROR_FLAG)
-                chatutils.deliver_message(client["sender_sock"], header)
-                try:
-                    answer = client["sender_sock"].recv(chatutils.HEADER_SIZE)
-                    message_type = struct.unpack(chatutils.HEADER_FORMAT, answer)[0]
-                    if message_type == chatutils.MESSAGE_TYPES["OK"]:
-                        break
-                except:
-                    raise
-            dettach_client(client, "sender")
+		if client["sender_sock"] is not None:
+			while True:
+				header = chatutils.prepare_message(chatutils.MESSAGE_TYPES["FLW"], chatutils.SRV_ID,
+												   client["sender_id"], chatutils.ERROR_FLAG)
+				chatutils.deliver_message(client["sender_sock"], header)
+				try:
+					answer = client["sender_sock"].recv(chatutils.HEADER_SIZE)
+					message_type = struct.unpack(chatutils.HEADER_FORMAT, answer)[0]
+					if message_type == chatutils.MESSAGE_TYPES["OK"]:
+						break
+				except:
+					raise
+			dettach_client(client, "sender")
 
-        if not client["viewer_sock"] and not client["sender_sock"]:
-            client_list.remove(client)
+		if not client["viewer_sock"] and not client["sender_sock"]:
+			client_list.remove(client)
 
 """
 | ===================================================================
@@ -142,16 +141,16 @@ def handle_shutdown(client_list):
 """
 
 def attach_client(client_list, client_type):
-    while True:
-        if client_type == "viewer":
-            client_id = random.randint(chatutils.VIEWER_RANGE_MIN, chatutils.VIEWER_RANGE_MAX)
-        else:
-            client_id = random.randint(chatutils.SENDER_RANGE_MIN, chatutils.SENDER_RANGE_MAX)
+	while True:
+		if client_type == "viewer":
+			client_id = random.randint(chatutils.VIEWER_RANGE_MIN, chatutils.VIEWER_RANGE_MAX)
+		else:
+			client_id = random.randint(chatutils.SENDER_RANGE_MIN, chatutils.SENDER_RANGE_MAX)
 
-        if not get_client_by_parameter(client_list, client_type + "_id", client_id):
-            return client_id
-        else:
-            continue
+		if not get_client_by_parameter(client_list, client_type + "_id", client_id):
+			return client_id
+		else:
+			continue
 
 """
 | ===================================================================
@@ -160,7 +159,7 @@ def attach_client(client_list, client_type):
 """
 
 def dettach_client(client, client_type):
-    client[client_type + "_id"], client[client_type + "_sock"] = None, None
+	client[client_type + "_id"], client[client_type + "_sock"] = None, None
 
 """
 | ===================================================================
@@ -169,15 +168,15 @@ def dettach_client(client, client_type):
 """
 
 def is_valid_client(sock, client_list, client_id):
-    client_type = get_client_type(client_id)
-    if client_type == 'viewer' or client_type == 'sender':
-        client = get_client_by_parameter(client_list, client_type + "_id", client_id)
-        if not client or not client[client_type + "_sock"] == sock:
-            return False
-        else:
-            return True
-    else:
-        return False
+	client_type = get_client_type(client_id)
+	if client_type == 'viewer' or client_type == 'sender':
+		client = get_client_by_parameter(client_list, client_type + "_id", client_id)
+		if not client or not client[client_type + "_sock"] == sock:
+			return False
+		else:
+			return True
+	else:
+		return False
 
 """
 | ===================================================================
@@ -186,15 +185,15 @@ def is_valid_client(sock, client_list, client_id):
 """
 
 def validate_peers(client_list, sock, client_from_id, client_to_id):
-    valid_from = True
-    if client_from_id != chatutils.SRV_ID and not is_valid_client(sock, client_list, client_from_id):
-        valid_from = False
+	valid_from = True
+	if client_from_id != chatutils.SRV_ID and not is_valid_client(sock, client_list, client_from_id):
+		valid_from = False
 
-    valid_to = True
-    if client_to_id != chatutils.SRV_ID and not is_valid_client(sock, client_list, client_to_id):
-        valid_to = False
+	valid_to = True
+	if client_to_id != chatutils.SRV_ID and not is_valid_client(sock, client_list, client_to_id):
+		valid_to = False
 
-    return valid_from and valid_to
+	return valid_from and valid_to
 
 """
 | ===================================================================
@@ -203,167 +202,168 @@ def validate_peers(client_list, sock, client_from_id, client_to_id):
 """
 
 def process_message(data, sock, sock_list, client_list, srv_seq_number, viewers_connected=0, senders_connected=0):
-    logger = logging.getLogger(__name__)
-    message_type_id, client_from_id, client_to_id, seq_number = struct.unpack(chatutils.HEADER_FORMAT, data)
+	logger = logging.getLogger(__name__)
+	message_type_id, client_from_id, client_to_id, seq_number = struct.unpack(chatutils.HEADER_FORMAT, data)
 
-    # This message is like a DHCP discover message: "Who can put me into the network?"
-    if message_type_id == chatutils.MESSAGE_TYPES["OI"]:
-        if client_to_id == chatutils.SRV_ID:
+	# This message is like a DHCP discover message: "Who can put me into the network?"
+	if message_type_id == chatutils.MESSAGE_TYPES["OI"]:
+		if client_to_id == chatutils.SRV_ID:
 
-            # Its a viewer
-            if client_from_id == 0 and viewers_connected < (chatutils.VIEWER_RANGE_MAX - chatutils.VIEWER_RANGE_MIN):
-                viewer_id = attach_client(client_list, "viewer")
-                client_list.append(
-                    {"viewer_id": viewer_id, "viewer_sock": sock, "sender_id": None, "sender_sock": None})
+			# Its a viewer
+			if client_from_id == 0 and viewers_connected < (chatutils.VIEWER_RANGE_MAX - chatutils.VIEWER_RANGE_MIN):
+				viewer_id = attach_client(client_list, "viewer")
+				client_list.append(
+					{"viewer_id": viewer_id, "viewer_sock": sock, "sender_id": None, "sender_sock": None})
 
-                chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, viewer_id, seq_number)
-                log = "A new viewer has arrived, its id is #%d" % viewer_id
-                logger.info(log)
-                broadcast(client_list, chatutils.MESSAGE_TYPES["MSG"], chatutils.SRV_ID, srv_seq_number, log)
-                srv_seq_number += 1
-                viewers_connected += 1
+				chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, viewer_id, seq_number)
+				log = "A new viewer has arrived, its id is #%d" % viewer_id
+				logger.info(log)
+				broadcast(client_list, chatutils.MESSAGE_TYPES["MSG"], chatutils.SRV_ID, srv_seq_number, log)
+				srv_seq_number += 1
+				viewers_connected += 1
 
-            # Its a sender
-            elif client_from_id != 0 and senders_connected < (chatutils.SENDER_RANGE_MAX - chatutils.SENDER_RANGE_MIN):
+			# Its a sender
+			elif client_from_id != 0 and senders_connected < (chatutils.SENDER_RANGE_MAX - chatutils.SENDER_RANGE_MIN):
 
-                # Sender is not gonna attach itself to any viewer
-                if not get_client_type(client_from_id) == 'viewer':
-                    sender_id = attach_client(client_list, "sender")
-                    client_list.append(
-                        {"viewer_id": None, "viewer_sock": None, "sender_id": sender_id, "sender_sock": sock})
+				# Sender is not gonna attach itself to any viewer
+				if not get_client_type(client_from_id) == 'viewer':
+					sender_id = attach_client(client_list, "sender")
+					client_list.append(
+						{"viewer_id": None, "viewer_sock": None, "sender_id": sender_id, "sender_sock": sock})
 
-                    chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, sender_id,
-                                              seq_number)
-                    log = "A new sender has arrived, its id is #%d and its not attached to any viewer" % sender_id
-                    logger.info(log)
-                    broadcast(client_list, chatutils.MESSAGE_TYPES["MSG"], chatutils.SRV_ID, srv_seq_number, log)
-                    srv_seq_number += 1
-                    senders_connected += 1
+					chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, sender_id,
+											  seq_number)
+					log = "A new sender has arrived, its id is #%d and its not attached to any viewer" % sender_id
+					logger.info(log)
+					broadcast(client_list, chatutils.MESSAGE_TYPES["MSG"], chatutils.SRV_ID, srv_seq_number, log)
+					srv_seq_number += 1
+					senders_connected += 1
 
-                # Sender already has a predefined viewer
-                else:
-                    viewer = get_client_by_parameter(client_list, "viewer_id", client_from_id)
+				# Sender already has a predefined viewer
+				else:
+					viewer = get_client_by_parameter(client_list, "viewer_id", client_from_id)
 
-                    # Viewer incorrect id
-                    if viewer is None:
-                        chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID,
-                                                  client_from_id, seq_number)
+					# Viewer incorrect id
+					if viewer is None:
+						chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID,
+												  client_from_id, seq_number)
 
-                        log = "Invalid id viewer provided in new sender's attempt"
-                        logger.warning(log)
-                    else:
-                        sender_id = attach_client(client_list, "sender")
-                        viewer["sender_id"] = sender_id
-                        viewer["sender_sock"] = sock
+						log = "Invalid id viewer provided in new sender's attempt"
+						logger.warning(log)
+					else:
+						sender_id = attach_client(client_list, "sender")
+						viewer["sender_id"] = sender_id
+						viewer["sender_sock"] = sock
 
-                        chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, sender_id,
-                                                  seq_number)
-                        log = "A new sender has arrived, its id is #%d and its attached to viewer #%d" % (
-                            sender_id, viewer["viewer_id"])
-                        logger.info(log)
-                        broadcast(client_list, chatutils.MESSAGE_TYPES["MSG"], chatutils.SRV_ID, seq_number, log)
-                        srv_seq_number += 1
-                        senders_connected += 1
-        else:
-            ''' Possible error causes
-            - No more space for viewers or senders
-            - Sender provided a bad ID '''
-            chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id,
-                                      seq_number)
+						chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, sender_id,
+												  seq_number)
+						log = "A new sender has arrived, its id is #%d and its attached to viewer #%d" % (
+							sender_id, viewer["viewer_id"])
+						logger.info(log)
+						broadcast(client_list, chatutils.MESSAGE_TYPES["MSG"], chatutils.SRV_ID, seq_number, log)
+						srv_seq_number += 1
+						senders_connected += 1
+		else:
+			''' Possible error causes
+			- No more space for viewers or senders
+			- Sender provided a bad ID '''
+			chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id,
+									  seq_number)
 
-    # The client wants to disconnect
-    elif message_type_id == chatutils.MESSAGE_TYPES["FLW"]:
+	# The client wants to disconnect
+	elif message_type_id == chatutils.MESSAGE_TYPES["FLW"]:
 
-        if client_to_id == chatutils.SRV_ID and is_valid_client(sock, client_list, client_from_id):
-            client_type = get_client_type(client_from_id)
-            client = get_client_by_parameter(client_list, client_type + "_id", client_from_id)
+		if client_to_id == chatutils.SRV_ID and is_valid_client(sock, client_list, client_from_id):
+			client_type = get_client_type(client_from_id)
+			client = get_client_by_parameter(client_list, client_type + "_id", client_from_id)
 
-            # Checks if client is viewer or sender
-            if client_type == 'sender':
-                if client["viewer_sock"]:
-                    chatutils.deliver_message(client["viewer_sock"], chatutils.MESSAGE_TYPES["FLW"], chatutils.SRV_ID,
-                                              client["viewer_id"], srv_seq_number)
-                    log = "Client #%d left" % client_from_id
-                    logger.info(log)
+			# Checks if client is viewer or sender
+			if client_type == 'sender':
+				if client["viewer_sock"]:
+					chatutils.deliver_message(client["viewer_sock"], chatutils.MESSAGE_TYPES["FLW"], chatutils.SRV_ID,
+											  client["viewer_id"], srv_seq_number)
+					log = "Client #%d left" % client["viewer_id"]
+					logger.info(log)
 
-                    sock_list.remove(client["viewer_sock"])
-                    dettach_client(client, "viewer")
-                    viewers_connected -= 1
-                    srv_seq_number += 1
+					sock_list.remove(client["viewer_sock"])
+					dettach_client(client, "viewer")
+					viewers_connected -= 1
+					srv_seq_number += 1
 
-                senders_connected -= 1
+				senders_connected -= 1
 
-            elif client_type == 'viewer':
-                viewers_connected -= 1
+			elif client_type == 'viewer':
+				viewers_connected -= 1
 
-            chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, client_from_id, seq_number)
-            log = "Client #%d left" % client_from_id
-            logger.info(log)
-            broadcast(client_list, chatutils.MESSAGE_TYPES["MSG"], chatutils.SRV_ID, srv_seq_number, log)
-            srv_seq_number += 1
+			chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, client_from_id, seq_number)
+			log = "Client #%d left" % client_from_id
+			logger.info(log)
+			broadcast(client_list, chatutils.MESSAGE_TYPES["MSG"], chatutils.SRV_ID, srv_seq_number, log)
+			srv_seq_number += 1
 
-            dettach_client(client, client_type)
-            sock_list.remove(sock)
-            sock.close()
+			dettach_client(client, client_type)
+			sock_list.remove(sock)
+			sock.close()
 
-            # If client isn't associated with no more ids and sockets, remove it from client_list
-            if client["viewer_id"] is None and client["viewer_sock"] is None \
-                    and client["sender_id"] is None and client["sender_sock"] is None:
-                client_list.remove(client)
-        else:
-            ''' Possible error causes
-            - Invalid client_from_id '''
-            chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id,
-                                      seq_number)
+			# If client isn't associated with no more ids and sockets, remove it from client_list
+			if client["viewer_id"] is None and client["viewer_sock"] is None \
+					and client["sender_id"] is None and client["sender_sock"] is None:
+				client_list.remove(client)
+		else:
+			''' Possible error causes
+			- Invalid client_from_id '''
+			chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id,
+									  seq_number)
 
-    # The client just sent a message
-    elif message_type_id == chatutils.MESSAGE_TYPES["MSG"]:
+	# The client just sent a message
+	elif message_type_id == chatutils.MESSAGE_TYPES["MSG"]:
 
-        if is_valid_client(sock, client_list, client_from_id):
-            chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, client_from_id, seq_number)
-            message_len = struct.unpack("!H", sock.recv(2))[0]
-            message = sock.recv(message_len)
+		if is_valid_client(sock, client_list, client_from_id):
+			chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, client_from_id, seq_number)
+			message_len = struct.unpack("!H", sock.recv(2))[0]
+			message = sock.recv(message_len)
 
-            if client_to_id == chatutils.SRV_ID:
-                logger.info(message)
+			if client_to_id == chatutils.SRV_ID:
+				logger.info("[MSG #%d]: %s", client_from_id, message)
 
-            # Its a broadcast
-            elif client_to_id == 0:
-                broadcast(client_list, chatutils.MESSAGE_TYPES["MSG"], client_from_id, srv_seq_number, message)
-                srv_seq_number += 1
+			# Its a broadcast
+			elif client_to_id == 0:
+				logger.info("[BROADCAST #%d]: %s", client_from_id, message)
+				broadcast(client_list, chatutils.MESSAGE_TYPES["MSG"], client_from_id, srv_seq_number, message)
+				srv_seq_number += 1
 
-            else:
-                client_type = get_client_type(client_to_id)
-                client_to = get_client_by_parameter(client_list, client_type + "_id", client_to_id)
-                if client_to["viewer_sock"]:
-                    chatutils.deliver_message(client_to["viewer_sock"], chatutils.MESSAGE_TYPES["MSG"], client_from_id,
-                                              client_to_id, seq_number, message_len, message)
-                else:
-                    chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id,
-                                              seq_number)
-        else:
-            log = "client_from_id #%d does not match expected id behind socket" % client_from_id
-            logger.error(log)
-            chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id,
-                                      seq_number)
+			else:
+				client_type = get_client_type(client_to_id)
+				client_to = get_client_by_parameter(client_list, client_type + "_id", client_to_id)
+				if client_to["viewer_sock"]:
+					chatutils.deliver_message(client_to["viewer_sock"], chatutils.MESSAGE_TYPES["MSG"], client_from_id,
+											  client_to_id, seq_number, message_len, message)
+				else:
+					chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id,
+											  seq_number)
+		else:
+			log = "client_from_id #%d does not match expected id behind socket" % client_from_id
+			logger.error(log)
+			chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id,
+									  seq_number)
 
-    # The client asked for a list of clients
-    elif message_type_id == chatutils.MESSAGE_TYPES["CREQ"]:
-        if client_to_id == chatutils.SRV_ID and is_valid_client(sock, client_list, client_from_id):
-            chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, client_from_id, seq_number)
+	# The client asked for a list of clients
+	elif message_type_id == chatutils.MESSAGE_TYPES["CREQ"]:
+		if client_to_id == chatutils.SRV_ID and is_valid_client(sock, client_list, client_from_id):
+			chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["OK"], chatutils.SRV_ID, client_from_id, seq_number)
 
-            clist, clist_len = get_clist(client_list)
+			clist, clist_len = get_clist(client_list)
 
-            # Broadcast CLIST
-            if client_to_id == 0:
-                broadcast(client_list, chatutils.MESSAGE_TYPES["CLIST"], chatutils.SRV_ID, srv_seq_number, clist)
-            else:
-                client_to = get_client_by_parameter(client_list, "viewer_id", client_to_id)
-                chatutils.deliver_message(client_to["viewer_sock"], data, chatutils.MESSAGE_TYPES["CLIST"], clist)
-            srv_seq_number += 1
-        else:
-            ''' Possible error causes
-            - Invalid client_from_id
-            - client_to_id is not SRV_ID '''
-            chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id,
-                                      seq_number)
+			# Broadcast CLIST
+			if client_to_id == 0:
+				broadcast(client_list, chatutils.MESSAGE_TYPES["CLIST"], chatutils.SRV_ID, srv_seq_number, clist)
+			else:
+				client_to = get_client_by_parameter(client_list, "viewer_id", client_to_id)
+				chatutils.deliver_message(client_to["viewer_sock"], data, chatutils.MESSAGE_TYPES["CLIST"], clist)
+			srv_seq_number += 1
+		else:
+			''' Possible error causes
+			- Invalid client_from_id
+			- client_to_id is not SRV_ID '''
+			chatutils.deliver_message(sock, chatutils.MESSAGE_TYPES["ERRO"], chatutils.SRV_ID, client_from_id,
+									  seq_number)
