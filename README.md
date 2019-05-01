@@ -1,5 +1,8 @@
 # python-chat
 
+This module was built for Python 2.7, compatibility for Python 3 is not warranted
+
+
 ## known issues
 |Issue|Fix|
 |---|---|
@@ -10,14 +13,14 @@
 
 - Start the server
 
-		python -m tests.server <port>
+		python server.py <port>
 
 
 - Start a viewer client
 
-		python -m tests.client [host:port] viewer
+		python client.py [host:port] viewer
 
 
 - Start a sender client
 
-		python -m tests.client [host:port] sender [--viewer_id <viewer_id>]
+		python client.py [host:port] sender [--viewer_id <viewer_id>]
